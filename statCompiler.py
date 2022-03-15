@@ -9,17 +9,17 @@ dataset = read_csv(url, skiprows=1, names=names)
 N_teams = len(unique(dataset.sort_values('WTeamID')['WTeamID']))
 
 teams = {}
-# team[team_ID] = [GAMES PLAYED, AVG SCORE, FGM, FGA, FGM3, FGA3, FTM, FTA, OR, DR, AST, STL, BLK, PF]
+# team[team_ID] = [GAMES PLAYED, AVG SCORE, FGM, FGA, FGM3, FGA3, FTM, FTA, OR, DR, AST, TO, STL, BLK, PF]
 for i in range(N_teams):
-    teams.update({unique(dataset.sort_values('WTeamID')['WTeamID'])[i]: np.zeros(14)})
+    teams.update({unique(dataset.sort_values('WTeamID')['WTeamID'])[i]: np.zeros(15)})
 
 # Add gross stats throughout season
 for game in dataset.values:
     W_id = game[2]
     L_id = game[4]
     
-    W_stats = [1, game[3], game[8], game[9], game[10], game[11], game[12], game[13], game[14], game[15], game[16], game[18], game[19], game[20]]
-    L_stats = [1, game[5], game[21], game[22], game[23], game[24], game[25], game[26], game[27], game[28], game[29], game[31], game[32], game[33]]
+    W_stats = [1, game[3], game[8], game[9], game[10], game[11], game[12], game[13], game[14], game[15], game[16], game[17], game[18], game[19], game[20]]
+    L_stats = [1, game[5], game[21], game[22], game[23], game[24], game[25], game[26], game[27], game[28], game[29], game[18], game[31], game[32], game[33]]
     teams[W_id] = np.add(teams[W_id], W_stats)
     teams[L_id] = np.add(teams[L_id], L_stats)
 
@@ -28,7 +28,7 @@ for id in teams:
     teams[id] = teams[id]/teams[id][0]
 
 # Export to csv
-csv_columns = ['ID','Score','FGM', 'FGA', 'FGM3', 'FGA3', 'FTM', 'FTA', 'OR', 'DR', 'AST', 'STL', 'BLK', 'PF']
+csv_columns = ['ID','Score','FGM', 'FGA', 'FGM3', 'FGA3', 'FTM', 'FTA', 'OR', 'DR', 'AST', 'TO', 'STL', 'BLK', 'PF']
 csv_file = "2003_stats.csv"
 
 try:

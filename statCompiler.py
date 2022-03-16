@@ -1,9 +1,8 @@
 # Re-written to use dataframes. Also added 'games' column to output CSV.
 # I tested the output to make sure it matched the previous for 2003.
 #
-# The only thing to note is that some teams went winless in certain seasons,
-# so they aren't included in the dataset since that's more trouble than it's worth to fix.
-# As a result we lose 6
+# There were only eight winless seasons, so getting team ID's via the winning team is okay.
+#
 
 import pandas as pd
 

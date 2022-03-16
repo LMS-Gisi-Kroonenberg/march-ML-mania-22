@@ -298,3 +298,99 @@ print(best_confusion)
 print('Accuracy:\t' + str(best_acc))
 print('Features:\t' + str(ftr_names(best_set)))
 print('Removed:\t' + str(ftr_names(get_removed(best_set))))
+
+# Genetic Algorithm
+print('\nGenetic Algorithm')
+quit()
+n = 5
+# feature       idx
+# sepal-length   0
+# sepal-width    1
+# petal-length   2
+# petal-width    3
+# z1             4
+# z2             5
+# z3             6
+# z4             7
+population =[[4,0,1,2,3],[4,5,1,2,3],[4,5,6,1,2],[4,5,6,7,1],[4,5,6,7,0]]
+init_size = len(population)
+
+for trial in range(50):
+    best = [[0,[], None] for _ in range(n)]
+    # Crossover
+    cross_pop = population
+    for j in range(init_size):
+        for k in range(j+1,init_size):
+            union = np.union1d(population[j], population[k])
+            intersection = np.intersect1d(population[j], population[k])
+            if(len(union) != 0):
+                cross_pop.append(union)
+            if(len(intersection) != 0):
+                cross_pop.append(intersection)
+    # Mutation
+    mut_pop = cross_pop.copy()
+    for j in range(len(mut_pop)):
+        mut_choice = random.randrange(3)
+        if (mut_choice == 0 and len(mut_pop[j]) != 8) or len(mut_pop[j]) == 0:
+            # Add new feature
+            new = get_new(mut_pop[j])
+            mut_pop[j] = np.append(mut_pop[j], new)
+        elif (mut_choice == 1 and len(mut_pop[j]) > 1) or len(mut_pop[j]) == 8:
+            # Remove feature
+            rmv = np.where(mut_pop[j] == random.choice(mut_pop[j]))
+            mut_pop[j] = np.delete(mut_pop[j], rmv)
+        else:
+            # Replace feature
+            rmvd = get_removed(mut_pop[j])
+            mut_pop[j] = np.delete(mut_pop[j], np.where(mut_pop[j] == random.choice(mut_pop[j])))
+            mut_pop[j] = np.append(mut_pop[j], random.choice(rmvd))
+
+    to_test = [0] * len(x_all)
+    population = mut_pop + cross_pop
+
+    # Evaluation
+    for i in range(len(population)):
+        removed = get_removed(population[i])
+        removed = np.sort(removed)[::-1]
+        for j in range(len(x_all)):
+            temp = x_all[j]
+            for elem in removed:
+                temp = np.delete(temp, int(elem))
+            to_test[j] = temp
+        # split data into 2 folds for training and test modified feature set
+        X_trainFold1, X_testFold1, y_trainFold1, y_testFold1 = train_test_split(to_test, y, test_size=0.50, random_state=1)
+        X_trainFold2 = X_testFold1
+        X_testFold2 = X_trainFold1
+        y_trainFold2 = y_testFold1
+        y_testFold2 = y_trainFold1
+        y_true = np.concatenate([y_testFold1, y_testFold2])
+
+
+        nn_model = MLPClassifier(max_iter=10000) # Increase maximum interation count to resolve convergence issue
+        nn_model.fit(X_trainFold1, y_trainFold1)
+        nn_pred_fold1 = nn_model.predict(np.array(X_testFold1, dtype=float)) # Resolves dtype issues with predict
+        nn_model.fit(X_trainFold2, y_trainFold2)
+        nn_pred_fold2 = nn_model.predict(np.array(X_testFold2, dtype=float))
+        nn_y_pred = np.concatenate([nn_pred_fold1, nn_pred_fold2])
+        current_acc = accuracy_score(y_true, nn_y_pred)
+
+        min_idx = find_min_idx(best)
+        if best[min_idx][0] < current_acc and not dup_exists(population[i], best):
+            best[min_idx][0] = current_acc
+            best[min_idx][1] = population[i]
+            best[min_idx][2] = confusion_matrix(y_true, svm_y_pred)
+    print(str(trial) + ')')
+    print_best(best)     
+    # Selection
+    new_pop = [[[]] for _ in range(n)]
+    for j in range(len(best)):
+        new_pop[j] = best[j][1]
+    # print('trial ' + str(trial) + ' best: ' + str(new_pop))
+    population = new_pop
+best_idx = find_max_idx(best)
+
+print('\nFinal Feature Set (Genetic Algorithm):')
+print('Confusion Matrix:')
+print(best[best_idx][2]) # TODO
+print('Accuracy:\t' + str(best[best_idx][0]))
+print('Features:\t' + str(ftr_names(best[best_idx][1])))

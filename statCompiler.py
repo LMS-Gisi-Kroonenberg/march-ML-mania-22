@@ -1,53 +1,54 @@
-import numpy as np
-from pandas import read_csv, unique
-import csv
+# Re-written to use dataframes. Also added 'games' column to output CSV.
+# I tested the output to make sure it matched the previous for 2003.
+#
+# The only thing to note is that some teams went winless in certain seasons,
+# so they aren't included in the dataset since that's more trouble than it's worth to fix.
+# As a result we lose 6
 
-url = 'data/MDataFiles_Stage2/MRegularSeason03DetailedResults.csv'
-names = ['Season','DayNum','WTeamID','WScore','LTeamID','LScore','WLoc','NumOT','WFGM','WFGA','WFGM3','WFGA3','WFTM','WFTA','WOR','WDR','WAst','WTO','WStl','WBlk','WPF','LFGM','LFGA','LFGM3','LFGA3','LFTM','LFTA','LOR','LDR','LAst','LTO','LStl','LBlk','LPF']
-dataset = read_csv(url, skiprows=1, names=names)
+import pandas as pd
 
-N_teams = len(unique(dataset.sort_values('WTeamID')['WTeamID']))
+never_won = []
 
-teams = {}
-# team[team_ID] = [GAMES PLAYED, AVG SCORE, FGM, FGA, FGM3, FGA3, FTM, FTA, OR, DR, AST, TO, STL, BLK, PF]
-for i in range(N_teams):
-    teams.update({unique(dataset.sort_values('WTeamID')['WTeamID'])[i]: np.zeros(15)})
+STAT_COLUMNS = csv_columns = ['Score','FGM', 'FGA', 'FGM3', 'FGA3', 'FTM', 'FTA', 'OR', 'DR', 'AST', 'TO', 'STL', 'BLK', 'PF', 'Games']
 
-# Add gross stats throughout season
-for game in dataset.values:
-    W_id = game[2]
-    L_id = game[4]
-    
-    W_stats = [1, game[3], game[8], game[9], game[10], game[11], game[12], game[13], game[14], game[15], game[16], game[17], game[18], game[19], game[20]]
-    L_stats = [1, game[5], game[21], game[22], game[23], game[24], game[25], game[26], game[27], game[28], game[29], game[18], game[31], game[32], game[33]]
-    teams[W_id] = np.add(teams[W_id], W_stats)
-    teams[L_id] = np.add(teams[L_id], L_stats)
+url = 'data/MDataFiles_Stage2/MRegularSeasonDetailedResults.csv'
+dataset = pd.read_csv(url)  # By default, dataframe has csv's first row as column names.
 
-# Take average stats per game
-for id in teams:
-    teams[id] = teams[id]/teams[id][0]
+# Add WTeamSeasonID column -- a teamSeasonID is a team w/ season -- formatted 'TeamID_season', for example '1242_2008'.
+dataset['WTeamSeasonID'] = dataset.apply(lambda row: str(row.WTeamID) + '_' + str(row.Season), axis=1)
+teams = pd.unique(dataset.sort_values('WTeamSeasonID')['WTeamSeasonID'])
+team_stats = pd.DataFrame(0, index=teams, columns=STAT_COLUMNS)  # DF for all teams with all zeroes in each stat column.
+
+# Sum each stat over all games.
+for game in dataset.itertuples(index=False):
+    W_stats = [game[3], game[8], game[9], game[10], game[11], game[12], game[13], game[14], game[15], game[16],
+               game[17], game[18], game[19], game[20], 1]
+    L_stats = [game[5], game[21], game[22], game[23], game[24], game[25], game[26], game[27], game[28], game[29],
+               game[18], game[31], game[32], game[33], 1]
+
+    w_team_season_id = str(game.WTeamID) + '_' + str(game.Season)
+    l_team_season_id = str(game.LTeamID) + '_' + str(game.Season)
+
+    try:
+        team_stats.loc[w_team_season_id] += W_stats
+    except KeyError:
+        if w_team_season_id not in never_won:
+            never_won.append(w_team_season_id)
+
+    try:
+        team_stats.loc[l_team_season_id] += L_stats
+    except KeyError:
+        if l_team_season_id not in never_won:
+            never_won.append(l_team_season_id)
+
+# Divide to get average of stats.
+for col in team_stats:
+    if col != 'Games':
+        team_stats[col] = team_stats.apply(lambda row: row[col] / row['Games'], axis=1)
 
 # Export to csv
-csv_columns = ['ID','Score','FGM', 'FGA', 'FGM3', 'FGA3', 'FTM', 'FTA', 'OR', 'DR', 'AST', 'TO', 'STL', 'BLK', 'PF']
-csv_file = "2003_stats.csv"
+csv_file = "all_reg_season_team_stats.csv"
+team_stats.to_csv(path_or_buf=csv_file)
 
-try:
-    with open(csv_file, 'w') as f:
-        # CSV header
-        writer = csv.DictWriter(f, fieldnames=csv_columns)
-        writer.writeheader()
-
-        # Write a line of stats for each team
-        for key in teams.keys():
-            X = np.insert(teams[key], 0, key, axis=0)
-            arr_str = ''
-            for i in range(len(X)):
-                if i == 1:
-                    continue
-                arr_str = arr_str + str(X[i])
-                if i != len(X) - 1:
-                    arr_str = arr_str + ','
-            arr_str = arr_str + '\n'
-            f.write(arr_str)
-except IOError:
-    print("I/O error")
+print(len(never_won))
+print(*never_won)

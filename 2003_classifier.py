@@ -72,10 +72,11 @@ def dup_exists(sample, set):
     return False
 
 # load dataset
+TOURNEY_YEAR = '2003'
 games_url = 'data/MDataFiles_Stage2/2003TourneyCompact.csv'
 games_names = ['Team1ID','Team2ID','Outcome']
-stats_url = '2003_stats.csv'
-stats_names = ['ID','Score','FGM','FGA','FGM3','FGA3','FTM','FTA','OR','DR','AST','TO','STL','BLK','PF']
+stats_url = 'all_reg_season_team_stats.csv'
+stats_names = ['ID','Score','FGM','FGA','FGM3','FGA3','FTM','FTA','OR','DR','AST','TO','STL','BLK','PF', 'WinPCT', 'Games']
 classes=[0, 1]
 
 # Team IDs, outcome
@@ -86,13 +87,13 @@ stats = read_csv(stats_url, skiprows=1, names=stats_names)
 # Create expanded dataset with team stats and game outcome
 dataset = np.empty((len(dataset_abrv), 29))
 for i in range(len(dataset_abrv)):
-    t1_id = dataset_abrv[i][0]
-    t2_id = dataset_abrv[i][1]
+    t1_id = str(dataset_abrv[i][0]) + '_' + TOURNEY_YEAR
+    t2_id = str(dataset_abrv[i][1]) + '_' + TOURNEY_YEAR
     t1_stats = stats.loc[stats['ID'] == t1_id]
     t2_stats = stats.loc[stats['ID'] == t2_id]
 
-    dataset[i][0:14] = t1_stats.values[0][1:]
-    dataset[i][14:28] = t2_stats.values[0][1:]
+    dataset[i][0:14] = t1_stats.values[0][1:15]
+    dataset[i][14:28] = t2_stats.values[0][1:15]
     dataset[i][28] = dataset_abrv[i][2]
 
 # create arrays for features and classes
@@ -165,7 +166,7 @@ svm_y_pred = np.concatenate([svm_pred_fold1, svm_pred_fold2])
 PCA_acc = print_results(y_true, svm_y_pred)
 print('Features:\t[\'z1\']')
 
-# Concatenate original and transformed features 
+# Concatenate original and transformed features
 
 print('\nSimulated Annealing')
 x_all = np.concatenate((X,Z), axis=1)
@@ -206,7 +207,7 @@ for i in range(100):
             if element in removed:
                 idx = np.argwhere(removed==element)
                 removed = np.delete(removed, idx)
-    elif random.choice([0, 1]): 
+    elif random.choice([0, 1]):
         # Random add
         to_add = random.sample(list(removed), num_modified)
         current_set = np.concatenate([current_set, to_add])
@@ -232,7 +233,7 @@ for i in range(100):
         for elem in removed:
             temp = np.delete(temp, int(elem))
         to_test[j] = temp
-    
+
     # split data into 2 folds for training and test modified feature set
     X_trainFold1, X_testFold1, y_trainFold1, y_testFold1 = train_test_split(to_test, y, test_size=0.50, random_state=1)
     X_trainFold2 = X_testFold1
@@ -380,7 +381,7 @@ for trial in range(50):
             best[min_idx][1] = population[i]
             best[min_idx][2] = confusion_matrix(y_true, svm_y_pred)
     print(str(trial) + ')')
-    print_best(best)     
+    print_best(best)
     # Selection
     new_pop = [[[]] for _ in range(n)]
     for j in range(len(best)):

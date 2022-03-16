@@ -8,7 +8,8 @@ import pandas as pd
 
 never_won = []
 
-STAT_COLUMNS = csv_columns = ['Score','FGM', 'FGA', 'FGM3', 'FGA3', 'FTM', 'FTA', 'OR', 'DR', 'AST', 'TO', 'STL', 'BLK', 'PF', 'Games']
+# Added 'WinPct' (season winning percentage) and 'Games' (games played).
+STAT_COLUMNS = csv_columns = ['Score','FGM', 'FGA', 'FGM3', 'FGA3', 'FTM', 'FTA', 'OR', 'DR', 'AST', 'TO', 'STL', 'BLK', 'PF', 'WinPct', 'Games']
 
 url = 'data/MDataFiles_Stage2/MRegularSeasonDetailedResults.csv'
 dataset = pd.read_csv(url)  # By default, dataframe has csv's first row as column names.
@@ -21,9 +22,9 @@ team_stats = pd.DataFrame(0, index=teams, columns=STAT_COLUMNS)  # DF for all te
 # Sum each stat over all games.
 for game in dataset.itertuples(index=False):
     W_stats = [game[3], game[8], game[9], game[10], game[11], game[12], game[13], game[14], game[15], game[16],
-               game[17], game[18], game[19], game[20], 1]
+               game[17], game[18], game[19], game[20], 1, 1]
     L_stats = [game[5], game[21], game[22], game[23], game[24], game[25], game[26], game[27], game[28], game[29],
-               game[18], game[31], game[32], game[33], 1]
+               game[18], game[31], game[32], game[33], 0, 1]
 
     w_team_season_id = str(game.WTeamID) + '_' + str(game.Season)
     l_team_season_id = str(game.LTeamID) + '_' + str(game.Season)

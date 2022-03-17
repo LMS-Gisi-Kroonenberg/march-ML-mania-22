@@ -13,4 +13,11 @@ The two scripts `statCompiler.py` and `resultCompiler.py` transform the data giv
 `round32.csv` was hand-made to show the predicted outcome from the round of 64. `outputDecoder.py` was used to transform the `lr_output.csv` to a human-readable format (replacing IDs with school names) for this process.
 <br/><br/>
 `bracketBuilder.py` takes the `round32.csv` results and predicts the rest of the bracket (see below).
-<img src="assets/bracket.pdf">
+<img src="assets/bracket.png">
+
+## Room for Improvement
+This project could have been improved on a few fronts
+ - Start earlier. We started this project two days before the tournament began which gave us little time to prepare.
+ - Find better data. We limited ourselves to the data provided by Kaggle and only used the regular season statistics as data points for each team. Things likes strength of schedule need to be taken into account because some teams do very well in the regular season but perform poorly in the tournament because their regular season opponents simply aren't as good as who they play in the tournament.
+ - Feature transformation and selection. We dabbled with PCA transormation and simulated annealing in the 2003_classifier but this was ultimately never implemented in the final product. This could help improve our results.
+ - Try other models. We stuck to the logistic regression model for this project but believe a neural network implementation may provide better results in the future.

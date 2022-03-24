@@ -2,7 +2,7 @@ from pandas import read_csv
 import numpy as np
 import csv
 
-url = 'round32.csv'
+url = 'actual_round16.csv'
 names = ['Team1', 'Team2']
 
 pred_url = 'decoded_prediction.csv'
